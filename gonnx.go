@@ -11,7 +11,7 @@ import (
 )
 
 type OnnxModel struct {
-	ModelProto *dto.ModelProto // test
+	ModelProto *dto.ModelProto
 }
 
 func New(modelPath string) (*OnnxModel, error) {
@@ -40,8 +40,16 @@ func New(modelPath string) (*OnnxModel, error) {
 	}, nil
 }
 
-func (o *OnnxModel) Run(input []float32) ([]float32, error) {
-	output := make([]float32, 0, len(input))
+func (o *OnnxModel) Run(input InputData) ([]float32, error) {
+	data, err := input.PrepareData()
+	if err != nil {
+		return nil, fmt.Errorf("error preparing input data: %v", err)
+	}
 
-	return output, nil
+	result, ok := data.([]float32)
+	if !ok {
+		return nil, fmt.Errorf("unexpected data format")
+	}
+
+	return result, nil
 }
