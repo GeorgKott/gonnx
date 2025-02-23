@@ -41,6 +41,10 @@ func New(modelPath string) (*OnnxModel, error) {
 }
 
 func (o *OnnxModel) Run(input InputData) ([]float32, error) {
+	if err := o.validateModel(input); err != nil {
+		return nil, err
+	}
+
 	data, err := input.PrepareData()
 	if err != nil {
 		return nil, fmt.Errorf("error preparing input data: %v", err)
@@ -52,4 +56,31 @@ func (o *OnnxModel) Run(input InputData) ([]float32, error) {
 	}
 
 	return result, nil
+}
+
+func (o *OnnxModel) validateModel(input InputData) error {
+	if o.ModelProto == nil {
+		return fmt.Errorf("modelProto is nil")
+	}
+	if o.ModelProto.Graph == nil {
+		return fmt.Errorf("graph is nil")
+	}
+	if len(o.ModelProto.Graph.Input) == 0 {
+		return fmt.Errorf("model has no inputs")
+	}
+	inputInfo := o.ModelProto.Graph.Input[0]
+	if inputInfo.Type == nil {
+		return fmt.Errorf("input type is nil")
+	}
+
+	expectedInputType, err := GetProtobufInputType(inputInfo.Type)
+	if err != nil {
+		return fmt.Errorf("error determining expected input type: %v", err)
+	}
+
+	if input.GetInputType() != expectedInputType {
+		return fmt.Errorf("expected input type: %s, but got: %s", expectedInputType, input.GetInputType())
+	}
+
+	return nil
 }
