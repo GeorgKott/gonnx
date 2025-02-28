@@ -8,6 +8,21 @@ import (
 	. "github.com/GeorgKott/gonnx"
 )
 
+func TestIrisNNSmallModelRun(t *testing.T) {
+	model, err := New("testdata/iris_nn_small.onnx")
+
+	assert.NoError(t, err)
+	assert.NotNil(t, model)
+
+	input := &TensorInput{Data: []float32{5.1, 3.5, 1.4, 0.2}}
+
+	output, err := model.Run(input) // 1.4371707 , 0.6069982 , 0.26410568
+
+	assert.NoError(t, err)
+
+	assert.NotEmpty(t, output)
+}
+
 func TestIrisNNModelRun(t *testing.T) {
 	model, err := New("testdata/iris_nn.onnx")
 

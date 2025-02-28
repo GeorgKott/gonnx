@@ -82,5 +82,35 @@ func (o *OnnxModel) validateModel(input InputData) error {
 		return fmt.Errorf("expected input type: %s, but got: %s", expectedInputType, input.GetInputType())
 	}
 
+	if expectedInputType == TensorType {
+		data, err := input.PrepareData()
+		if err != nil {
+			return fmt.Errorf("error preparing input data: %v", err)
+		}
+
+		tensorData, ok := data.([]float32)
+		if !ok {
+			return fmt.Errorf("unexpected data format, expected []float32")
+		}
+
+		expectedSize := 1
+		tensorType, ok := inputInfo.Type.Value.(*dto.TypeProto_TensorType)
+		if !ok {
+			return fmt.Errorf("failed to extract tensor shape")
+		}
+
+		for _, dim := range tensorType.TensorType.Shape.Dim {
+			if dim.GetDimValue() == 0 {
+				return fmt.Errorf("dynamic dimensions are not supported")
+			}
+
+			expectedSize *= int(dim.GetDimValue())
+		}
+
+		if len(tensorData) != expectedSize {
+			return fmt.Errorf("invalid input size: expected %d, got %d", expectedSize, len(tensorData))
+		}
+	}
+
 	return nil
 }
